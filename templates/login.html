@@ -4,29 +4,43 @@
     <title>Login - WhisperRoom</title>
 </head>
 <body>
-    <script type="module">
-        // Import the functions you need from the SDKs you need
-        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-app.js";
-        import { getAnalytics } from "https://www.gstatic.com/firebasejs/11.10.0/firebase-analytics.js";
-        // TODO: Add SDKs for Firebase products that you want to use
-        // https://firebase.google.com/docs/web/setup#available-libraries
-      
-        // Your web app's Firebase configuration
-        // For Firebase JS SDK v7.20.0 and later, measurementId is optional
-        const firebaseConfig = {
-          apiKey: "AIzaSyAgnhEDAmwS2yQCfFR-aF-6g4d_wZ3mYvI",
-          authDomain: "anonportal.firebaseapp.com",
-          projectId: "anonportal",
-          storageBucket: "anonportal.firebasestorage.app",
-          messagingSenderId: "452128418476",
-          appId: "1:452128418476:web:907b035ce81503768a0d09",
-          measurementId: "G-XYL7WEVBPM"
-        };
-      
-        // Initialize Firebase
-        const app = initializeApp(firebaseConfig);
-        const analytics = getAnalytics(app);
-      </script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
+
+    <script>  
+    const firebaseConfig = {
+        apiKey: "AIzaSyAgnhEDAmwS2yQCfFR-aF-6g4d_wZ3mYvI",
+        authDomain: "anonportal.firebaseapp.com",
+        projectId: "anonportal",
+        storageBucket: "anonportal.firebasestorage.app",
+        messagingSenderId: "452128418476",
+        appId: "1:452128418476:web:907b035ce81503768a0d09",
+        measurementId: "G-XYL7WEVBPM"
+    };
+    firebase.initializeApp(firebaseConfig);
+    const auth = firebase.auth();
+
+    function loginWithGoogle() {
+        const provider = new firebase.auth.GoogleAuthProvider();
+        firebase.auth().signInWithPopup(provider)
+        .then((result) => {
+            const user = result.user;
+            return user.getIdToken().then((idToken) => {
+            return fetch("/login", {
+                method: "POST",
+                headers: {
+                "Content-Type": "application/json"
+                },
+                body: JSON.stringify(user)
+            });
+            });
+        })
+        .then(() => window.location.href = "/")
+        .catch(console.error);
+    }
+    </script>
+
+<button onclick="loginWithGoogle()">Sign in with Google</button>
     <h2>Login</h2>
     <form method="POST" action="/login">
         <input type="email" name="email" placeholder="Email" required /><br>

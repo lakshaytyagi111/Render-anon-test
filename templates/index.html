@@ -11,12 +11,15 @@
     </style>
 </head>
 <body>
-    <h2>Welcome, {{ user.email if user else "Anonymous Student" }}!</h2>
+    <h2>Welcome, {{ user.displayName if user else "Anonymous Student" }}!</h2>
 
     <a href="{{ url_for('main.logout') }}">Logout</a>
     <div>
-      <label>Room: <input type="text" id="room" value="general"></label>
-        <button onclick="joinRoom()">Join</button>
+            <select id="room" onclick="joinRoom()">
+            {% for room_id, room in rooms.items() %}
+            <option value="{{ room.roomId }}" >{{ room.name }}</option>
+            {% endfor %}
+            </select>
     </div>
 
     <div id="chat-box"></div>
@@ -36,14 +39,28 @@
         let currentRoom = 'general';
 
         function joinRoom() {
-            const roomInput = document.getElementById('room');
-            const newRoom = roomInput.value.trim();
-
+            const select = document.getElementById('room');
+            const roomName = select.options[select.selectedIndex].text;
+            console.log(select);
+            const newRoom = select.value.trim();
+            console.log(newRoom);
+            console.log(currentRoom);
             if (newRoom && newRoom !== currentRoom) {
                 socket.emit('leave', { room: currentRoom });
                 socket.emit('join', { room: newRoom });
                 currentRoom = newRoom;
-                chatBox.innerHTML += `<p><em>Switched to room: ${currentRoom}</em></p>`;
+                chatBox.innerHTML= '';
+                fetch(`/get_chats/${newRoom}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        chatBox.innerHTML = '';
+                        chatBox.innerHTML = `<h1>${roomName}</h1>`;
+                        data.forEach(chat => {
+                            chatBox.innerHTML += `<p><strong>${chat.sender}:</strong> ${chat.message}</p>`;
+                        });
+                    });
+
+                chatBox.scrollTop = chatBox.scrollHeight;
             }
         }
 
@@ -66,7 +83,6 @@
             chatBox.scrollTop = chatBox.scrollHeight;
         });
 
-        // Auto-join default room on load
         window.onload = () => {
             socket.emit('join', { room: currentRoom });
         };
