@@ -35,9 +35,25 @@
             });
             });
         })
-        .then(() => window.location.href = "/")
-        .catch(console.error);
-    }
+        .then(response => response.json())
+            .then(data => {
+                console.log(data);
+                if (data.success) {
+                    if (data.is_new_user) {
+                        alert('account has been created.');
+                    } else {
+                        alert('welcome back!');
+                    }
+                    window.location.href = data.redirect;
+                } else {
+                    alert('Login failed: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Login failed. Please try again.');
+            });
+        }
     </script>
 
 <button onclick="loginWithGoogle()">Sign in with Google</button>
@@ -46,6 +62,6 @@
         <input type="email" name="email" placeholder="Email" required /><br>
         <button type="submit">Login</button>
     </form>
-    <a href="{{ url_for('main.register') }}">Register</a>
+    
 </body>
 </html>
