@@ -2,51 +2,29 @@ from flask import Blueprint, render_template, session, request, redirect, url_fo
 from flask_login import login_required
 from flask import jsonify
 from flask_socketio import emit, join_room, leave_room
-from extensions import socketio 
+from extensions import socketio
+from extensions import db
 import firebase_admin
-from firebase_admin import credentials, auth, firestore
+from firebase_admin import auth
 from google.cloud.firestore_v1.base_query import FieldFilter
 import json
 from datetime import datetime
 import uuid
 
-cred = credentials.Certificate("/etc/secrets/admin-sdk.json")
-firebase_admin.initialize_app(cred)
-
-db = firestore.client()
-
 bp = Blueprint('main', __name__)
 
-# Dummy user database for demonstration
-users = {}
-rooms = {
-    "general": {
-        "name": "General Chat",
-        "roomId": "6utcyasguxaksj"
-    },
-    "academics": {
-        "name": "Academic Help",
-        "roomId": "3w45e6dutvgjhj"
-    },
-    "complaints": {
-        "name": "Raise Concerns",
-        "roomId": "6ut9087tfvyjjbj"
-    }
-}
-chat_rooms = {
-    "6utcyasguxaksj": [
-        {"sender": "System", "message": "Welcome to the General room."},
-    ],
-    "3w45e6dutvgjhj": [
-        {"sender": "System", "message": "Discuss academic questions here."},
-        {"sender": "Anon312", "message": "What is the timetable for tomorrow?."}
+# @bp.route("/firestore-test")
+# def test_firestore_call():
+#     try:
+#         docs = db.collection("users").limit(1).get()
+#         data = [doc.to_dict() for doc in docs]
+#         return jsonify({"status": "success", "data": data, "count": len(data)})
+#     except Exception as e:
+#         print("Firestore error:", e)
+#         import traceback; traceback.print_exc()
+#         return jsonify({"status": "error", "message": str(e)}), 500
+    
 
-    ],
-    "6ut9087tfvyjjbj": [
-        {"sender": "System", "message": "Raise your concerns anonymously."},
-        {"sender": "Anon213", "message": "Classroom AC is not working"}
-    ]
-}
 def moderate_message(message):
     # Placeholder for Gemini API moderation call
     # Replace with actual API integration
@@ -58,13 +36,13 @@ def moderate_message(message):
 @bp.route('/')
 def index():
     if 'user' in session:
-        return render_template('index.html', user=session['user'], rooms=rooms)
+        room = get_all_rooms()
+        return render_template('index.html', user=session['user'], rooms=room)
     return redirect(url_for('main.login'))
 
 @login_required
 @bp.route('/get_chats/<room>')
 def get_chats(room):
-    chats = chat_rooms.get(room, [])
     chats = get_chats_by_room(room)
     return jsonify(chats)
 
@@ -80,7 +58,8 @@ def login():
             if data.get('emailVerified') == True:
                 print('email verified')
                 existing_user = get_user_by_email(email)
-                print(f'existing user: {existing_user}')
+                if existing_user:
+                    print(f'existing user: {existing_user}')
                 if existing_user:
                     user_id = existing_user['id']
                     session['user'] = {
@@ -168,7 +147,9 @@ def get_room(room_id):
 
 def get_all_rooms():
     docs = db.collection('rooms').stream()
-    return [doc.to_dict() for doc in docs]
+    docs_list = list(docs)
+    print(f'document list :{docs_list}')
+    return [doc.to_dict() for doc in docs_list]
 
 def get_chats_by_room(room_id):
     try:
@@ -202,9 +183,12 @@ def get_user_by_email(email):
     print(f'getting users for {email}')
     # docs = db.collection('users').where(filter=("email", "==", email)).limit(1).stream()
     docs = db.collection('users').where(filter=FieldFilter("email", "==", email)).limit(1).stream()
-    for doc in docs:
-        print(doc.to_dict())
-        return doc.to_dict()
+    print("Query executed, iterating...")
+    print(docs)
+    if docs:
+        for doc in docs:
+            print(doc.to_dict())
+            return doc.to_dict()
     return None
 
 @socketio.on('join')

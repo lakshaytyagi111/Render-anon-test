@@ -16,8 +16,8 @@
     <a href="{{ url_for('main.logout') }}">Logout</a>
     <div>
             <select id="room" onclick="joinRoom()">
-            {% for room_id, room in rooms.items() %}
-            <option value="{{ room.roomId }}" >{{ room.name }}</option>
+            {% for room in rooms %}
+            <option value="{{ room.roomId }}">{{ room.name }}</option>
             {% endfor %}
             </select>
     </div>
