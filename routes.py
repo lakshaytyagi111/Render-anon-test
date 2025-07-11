@@ -78,7 +78,9 @@ def login():
         try:
             
             if data.get('emailVerified') == True:
+                print('email verified')
                 existing_user = get_user_by_email(email)
+                print(f'existing user: {existing_user}')
                 if existing_user:
                     user_id = existing_user['id']
                     session['user'] = {
@@ -105,7 +107,7 @@ def login():
                         'anonymous_userid': existing_user['anonymous_userid'],
                         'user_id': existing_user['id']
                     }
-                
+                print(session)
                 return jsonify({
                     'success': True,
                     'user_id': user_id,
