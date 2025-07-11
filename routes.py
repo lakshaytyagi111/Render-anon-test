@@ -192,23 +192,25 @@ def get_user_by_email(email):
             return doc.to_dict()
     return None
 
-# @socketio.on('join')
-# def handle_join(data):
-#     room = data['room']
-#     join_room(room)
-#     emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has entered the room."}, to=room)
+@socketio.on('join')
+def handle_join(data):
+    room = data['room']
+    join_room(room)
+    emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has entered the room."}, to=room)
 
-# @socketio.on('leave')
-# def handle_leave(data):
-#     room = data['room']
-#     leave_room(room)
-#     emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has left the room."}, to=room)
+@socketio.on('leave')
+def handle_leave(data):
+    room = data['room']
+    leave_room(room)
+    emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has left the room."}, to=room)
 
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
+    join_room(room)
     msg = data['msg']
     anonymous_userid = session.get('user', {}).get('anonymous_userid')
     add_chat(room, anonymous_userid, msg)
     # moderation
-    emit('message', {'msg': msg, 'anonymous_userid': 'vhjj j'}, to=room)
+    # print('now sending')
+    emit('message', {'msg': msg, 'anonymous_userid': anonymous_userid, 'timestamp': datetime.now().isoformat()}, to=room)

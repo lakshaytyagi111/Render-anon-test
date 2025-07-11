@@ -9,9 +9,11 @@ function joinRoom() {
     const select = document.getElementById('room');
     const roomName = select.options[select.selectedIndex].text;
     const newRoom = select.value.trim();
+    // console.log(currentRoom);
+    // console.log(newRoom);
     if ((newRoom && newRoom !== currentRoom) && newRoom !== "None") {
-        //socket.emit('leave', { room: currentRoom });
-       // socket.emit('join', { room: newRoom });
+        socket.emit('leave', { room: currentRoom });
+        socket.emit('join', { room: newRoom });
         currentRoom = newRoom;
         chatBox.innerHTML= '';
         fetch(`/get_chats/${newRoom}`)
@@ -50,18 +52,21 @@ chatForm.addEventListener('submit', function (e) {
 });
 
 socket.on('message', data => {
+    // console.log(data);
     const messages = Array.isArray(data) ? data : [data];
 
     messages.forEach(chat => {
         const id = chat.anonymous_userid || chat.user_id;
-        const message = chat.message || chat.msg; // support both
+        const message = chat.message || chat.msg;
         const timestamp = chat.timestamp || "Unknown time";
 
         const html = `<div class="chat-message">
-            <span class="chat-timestamp">${timestamp}</span>
-            <span class="chat-id">${id}:</span>
-            <span class="chat-text">${message}</span>
-            </div>`;
+                        <div class="chat-cont">
+                        <span class="chat-id">${id}:</span>
+                        <span class="chat-timestamp">${timestamp}</span>
+                        </div>
+                        <span class="chat-text">${message}</span>
+                        </div>`;
         chatBox.innerHTML += html;
     });
 
