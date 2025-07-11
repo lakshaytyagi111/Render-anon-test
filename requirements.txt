@@ -4,6 +4,5 @@ flask-cors
 requests
 google-cloud-firestore
 gunicorn
-eventlet
 firebase-admin
 flask-login
