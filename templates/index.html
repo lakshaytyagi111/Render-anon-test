@@ -2,90 +2,37 @@
 <html>
 <head>
     <title>WhisperRoom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
     <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
-    <style>
-        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
-        #chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; background: white; }
-        #chat-box p { margin: 5px 0; }
-        textarea { width: 100%; height: 60px; }
-    </style>
 </head>
 <body>
-    <h2>Welcome, {{ user.displayName if user else "Anonymous Student" }}!</h2>
+    <div class="container">
+        <header>
+            <h2>WhisperRoom</h2>
+            <p>Welcome, <strong>{{ user.anonymous_userid }}</strong></p>
+            <a href="{{ url_for('main.logout') }}">Logout</a>
+        </header>
 
-    <a href="{{ url_for('main.logout') }}">Logout</a>
-    <div>
-            <select id="room" onclick="joinRoom()">
-            {% for room in rooms %}
-            <option value="{{ room.roomId }}">{{ room.name }}</option>
-            {% endfor %}
+        <section class="room-select">
+            <label for="room">Select Room:</label>
+            <select id="room" onchange="joinRoom()">
+                <option value="None">Enter A Room</option>
+                {% for room in rooms %}
+                    <option value="{{ room.roomId }}">{{ room.name }}</option>
+                {% endfor %}
             </select>
+        </section>
+
+        <section id="chat-box" class="chat-box">
+            <!-- Chat messages will be appended here -->
+        </section>
+
+        <form id="chat-form">
+            <textarea id="message" placeholder="Type your message..." required></textarea>
+            <button type="submit">Send</button>
+        </form>
     </div>
 
-    <div id="chat-box"></div>
-
-    <form id="chat-form">
-        <textarea id="message" placeholder="Type your message..." required></textarea><br>
-        <button type="submit">Send</button>
-    </form>
-
-
-    <script>
-        const socket = io();
-
-        const chatBox = document.getElementById('chat-box');
-        const chatForm = document.getElementById('chat-form');
-        const messageInput = document.getElementById('message');
-        let currentRoom = 'general';
-
-        function joinRoom() {
-            const select = document.getElementById('room');
-            const roomName = select.options[select.selectedIndex].text;
-            console.log(select);
-            const newRoom = select.value.trim();
-            console.log(newRoom);
-            console.log(currentRoom);
-            if (newRoom && newRoom !== currentRoom) {
-                socket.emit('leave', { room: currentRoom });
-                socket.emit('join', { room: newRoom });
-                currentRoom = newRoom;
-                chatBox.innerHTML= '';
-                fetch(`/get_chats/${newRoom}`)
-                    .then(response => response.json())
-                    .then(data => {
-                        chatBox.innerHTML = '';
-                        chatBox.innerHTML = `<h1>${roomName}</h1>`;
-                        data.forEach(chat => {
-                            chatBox.innerHTML += `<p><strong>${chat.sender}:</strong> ${chat.message}</p>`;
-                        });
-                    });
-
-                chatBox.scrollTop = chatBox.scrollHeight;
-            }
-        }
-
-        chatForm.addEventListener('submit', function (e) {
-            e.preventDefault();
-            const msg = messageInput.value.trim();
-            if (msg) {
-                socket.emit('message', { room: currentRoom, msg });
-                messageInput.value = '';
-            }
-        });
-
-        socket.on('message', data => {
-            chatBox.innerHTML += `<p><strong>${data.user}:</strong> ${data.msg}</p>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        socket.on('status', data => {
-            chatBox.innerHTML += `<p><em>${data.msg}</em></p>`;
-            chatBox.scrollTop = chatBox.scrollHeight;
-        });
-
-        window.onload = () => {
-            socket.emit('join', { room: currentRoom });
-        };
-    </script>
+    <script src="{{ url_for('static', filename='main.js') }}"></script>
 </body>
 </html>

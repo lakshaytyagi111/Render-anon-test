@@ -2,6 +2,8 @@
 <html>
 <head>
     <title>Login - WhisperRoom</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+
 </head>
 <body>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
@@ -56,12 +58,10 @@
         }
     </script>
 
-<button onclick="loginWithGoogle()">Sign in with Google</button>
-    <h2>Login</h2>
-    <form method="POST" action="/login">
-        <input type="email" name="email" placeholder="Email" required /><br>
-        <button type="submit">Login</button>
-    </form>
+    <div class="google-holder">
+    <h2>Login to WhisperRoom</h2>
+    <button class="google-login" onclick="loginWithGoogle()">Sign in with Google</button>
+    </div>
     
 </body>
 </html>

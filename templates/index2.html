@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>WhisperRoom</title>
+    <script src="https://cdn.socket.io/4.6.1/socket.io.min.js"></script>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background: #f4f4f4; }
+        #chat-box { border: 1px solid #ccc; padding: 10px; height: 300px; overflow-y: scroll; background: white; }
+        #chat-box p { margin: 5px 0; }
+        textarea { width: 100%; height: 60px; }
+        
+        .chat-message {
+            padding: 10px 15px;
+            margin: 8px 0;
+            background: #f5f7fa;
+            border-radius: 8px;
+            box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+            font-family: 'Segoe UI', Arial, sans-serif;
+            }
+
+            .chat-timestamp {
+            color: #888;
+            font-size: 0.85em;
+            margin-right: 10px;
+            }
+
+            .chat-id {
+            color: #2b5dab;
+            font-weight: bold;
+            margin-right: 6px;
+            }
+
+            .chat-text {
+            color: #333;
+            }
+
+    </style>
+</head>
+<body>
+    <h2>Welcome, {{ user.anonymous_userid }}!</h2>
+
+    <a href="{{ url_for('main.logout') }}">Logout</a>
+    <div>
+            <select id="room" onclick="joinRoom()">
+            {% for room in rooms %}
+            <option value="{{ room.roomId }}">{{ room.name }}</option>
+            {% endfor %}
+            </select>
+    </div>
+
+    <div id="chat-box"></div>
+
+    <form id="chat-form">
+        <textarea id="message" placeholder="Type your message..." required></textarea><br>
+        <button type="submit">Send</button>
+    </form>
+
+
+    <script>
+        const socket = io();
+
+        const chatBox = document.getElementById('chat-box');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message');
+        let currentRoom = 'general';
+
+        function joinRoom() {
+            const select = document.getElementById('room');
+            const roomName = select.options[select.selectedIndex].text;
+            const newRoom = select.value.trim();
+            if (newRoom && newRoom !== currentRoom) {
+                socket.emit('leave', { room: currentRoom });
+                socket.emit('join', { room: newRoom });
+                currentRoom = newRoom;
+                chatBox.innerHTML= '';
+                fetch(`/get_chats/${newRoom}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        chatBox.innerHTML = '';
+                        chatBox.innerHTML = `<h1>${roomName}</h1>`;
+
+                        data.forEach(chat => {
+                        const id = chat.anonymous_userid || chat.user_id;
+                        const message = chat.message || chat.msg; // support both
+                        const timestamp = chat.timestamp || "Unknown time";
+
+                        const html = `<div class="chat-message">
+                            <span class="chat-timestamp">${timestamp}</span>
+                            <span class="chat-id">${id}:</span>
+                            <span class="chat-text">${message}</span>
+                            </div>`;
+                        chatBox.innerHTML += html;
+                    });
+                });
+
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        }
+
+        chatForm.addEventListener('submit', function (e) {
+            e.preventDefault();
+            const msg = messageInput.value.trim();
+            if (msg) {
+                socket.emit('message', { room: currentRoom, msg });
+                messageInput.value = '';
+            }
+        });
+
+        socket.on('message', data => {
+            console.log(data);
+            // chatBox.innerHTML += `<p><strong>${data[0].anonymous_userid || data[0].user_id}:</strong> ${data.msg}</p>`;
+            const messages = Array.isArray(data) ? data : [data];
+
+            messages.forEach(chat => {
+            const id = chat.anonymous_userid || chat.user_id;
+            const message = chat.message || chat.msg; // support both
+            const timestamp = chat.timestamp || "Unknown time";
+
+            const html = `<div class="chat-message">
+                <span class="chat-timestamp">${timestamp}</span>
+                <span class="chat-id">${id}:</span>
+                <span class="chat-text">${message}</span>
+                </div>`;
+            chatBox.innerHTML += html;
+            });
+
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        socket.on('status', data => {
+            chatBox.innerHTML += `<p><em>${data.msg}</em></p>`;
+            chatBox.scrollTop = chatBox.scrollHeight;
+        });
+
+        window.onload = () => {
+            socket.emit('join', { room: currentRoom });
+        };
+    </script>
+</body>
+</html>

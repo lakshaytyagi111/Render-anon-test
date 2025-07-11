@@ -102,39 +102,39 @@ def login():
             
     return render_template('login.html')
 
-@bp.route('/send_message', methods=['POST'])
-def send_message():
-    if 'user' not in session:
-        return redirect(url_for('main.login'))
-    data = request.get_json()
-    message = data.get('message')
-    roomId = data.get('roomId')
-    sender = session.get('user', 'Anonymous')
-    timestamp = datetime.now()
+# @bp.route('/send_message', methods=['POST'])
+# def send_message():
+#     if 'user' not in session:
+#         return redirect(url_for('main.login'))
+#     data = request.get_json()
+#     message = data.get('message')
+#     roomId = data.get('roomId')
+#     sender = session.get('user', 'Anonymous')
+#     timestamp = datetime.now()
     
-    if not message or not roomId:
-        return redirect(url_for('main.index', error="No Content"))
+#     if not message or not roomId:
+#         return redirect(url_for('main.index', error="No Content"))
     
-    if not moderate_message(message):
-        chat_rooms[roomId].append({
-                'sender': sender,
-                'message': message,
-                'timestamp': timestamp,
-                'moderated': True
-            })
-        return redirect(url_for('main.index', error="Message May Contain Hateful Or Inappropriate Speech"))
-    else:
-        if roomId in chat_rooms:
-            chat_rooms[roomId].append({
-                'sender': sender,
-                'message': message,
-                'timestamp': timestamp,
-                'moderated': False
-            })
-        else:
-            return redirect(url_for('main.index', error="Invalid RoomId"))
+#     if not moderate_message(message):
+#         chat_rooms[roomId].append({
+#                 'sender': sender,
+#                 'message': message,
+#                 'timestamp': timestamp,
+#                 'moderated': True
+#             })
+#         return redirect(url_for('main.index', error="Message May Contain Hateful Or Inappropriate Speech"))
+#     else:
+#         if roomId in chat_rooms:
+#             chat_rooms[roomId].append({
+#                 'sender': sender,
+#                 'message': message,
+#                 'timestamp': timestamp,
+#                 'moderated': False
+#             })
+#         else:
+#             return redirect(url_for('main.index', error="Invalid RoomId"))
 
-    return redirect(url_for('main.index'))
+#     return redirect(url_for('main.index'))
 
 @bp.route('/logout')
 def logout():
@@ -169,13 +169,14 @@ def get_chats_by_room(room_id):
         chats = [doc.to_dict() for doc in docs]
         return sorted(chats, key=lambda x: x.get('timestamp', datetime.min))
 
-def add_chat(room_id, user_id, message):
+def add_chat(room_id, anonymous_userid, message):
     chat_data = {
         'room_id': room_id,
-        'user_id': user_id,
+        'anonymous_userid': anonymous_userid,
         'message': message,
         'timestamp': datetime.now()
     }
+    print(chat_data)
     db.collection('chats').add(chat_data)
     return True
 
@@ -191,24 +192,23 @@ def get_user_by_email(email):
             return doc.to_dict()
     return None
 
-@socketio.on('join')
-def handle_join(data):
-    room = data['room']
-    join_room(room)
-    emit('status', {'msg': f"{session.get('user', {}).get('email', 'Anonymous')} has entered the room."}, to=room)
+# @socketio.on('join')
+# def handle_join(data):
+#     room = data['room']
+#     join_room(room)
+#     emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has entered the room."}, to=room)
 
-@socketio.on('leave')
-def handle_leave(data):
-    room = data['room']
-    leave_room(room)
-    emit('status', {'msg': f"{session.get('user', {}).get('email', 'Anonymous')} has left the room."}, to=room)
+# @socketio.on('leave')
+# def handle_leave(data):
+#     room = data['room']
+#     leave_room(room)
+#     emit('status', {'msg': f"{session.get('user', {}).get('anonymous_userid')} has left the room."}, to=room)
 
 @socketio.on('message')
 def handle_message(data):
     room = data['room']
     msg = data['msg']
-    user_id = session.get('user', {}).get('user_id')
-    print(user_id)
-    add_chat(room, user_id, msg)
+    anonymous_userid = session.get('user', {}).get('anonymous_userid')
+    add_chat(room, anonymous_userid, msg)
     # moderation
     emit('message', {'msg': msg, 'anonymous_userid': 'vhjj j'}, to=room)
