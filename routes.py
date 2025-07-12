@@ -37,7 +37,7 @@ bp = Blueprint('main', __name__)
 #         return False  # Message is flagged
 #     return True
 
-genai.configure(api_key=os.getenv('GOOGLE-API-KEY'))
+genai.configure(api_key=os.getenv('GOOGLE_API_KEY'))
 
 def moderate_message(text):
     model = genai.GenerativeModel('gemini-2.0-flash')

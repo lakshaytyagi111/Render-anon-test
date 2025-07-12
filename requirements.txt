@@ -5,6 +5,6 @@ requests
 google-cloud-firestore
 gunicorn
 firebase-admin
-flask-login
+Flask-Login>=0.6.2
 google-generativeai
 python-dotenv
