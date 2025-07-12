@@ -3,7 +3,7 @@ flask-socketio
 flask-cors
 requests
 google-cloud-firestore
-gunicorn
+gunicorn>=20.1.0
 firebase-admin
 Flask-Login>=0.6.2
 google-generativeai
