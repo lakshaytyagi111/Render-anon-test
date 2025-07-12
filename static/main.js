@@ -23,9 +23,9 @@ function joinRoom() {
                 chatBox.innerHTML = `<h1>${roomName}</h1>`;
 
                 data.forEach(chat => {
-                    const id = chat.anonymous_userid || chat.user_id;
-                    const message = chat.message || chat.msg;
-                    const timestamp = chat.timestamp || "Unknown time";
+                    const id = escapeHTML(chat.anonymous_userid || chat.user_id || "Anon");
+                    const message = escapeHTML(chat.message || chat.msg || "");
+                    const timestamp = escapeHTML(chat.timestamp || "Now");
 
                     const html = `<div class="chat-message">
                         <div class="chat-cont">
@@ -51,14 +51,24 @@ chatForm.addEventListener('submit', function (e) {
     }
 });
 
+function escapeHTML(str) {
+    if (!str) return '';
+    return str
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
+}
+
 socket.on('message', data => {
     // console.log(data);
     const messages = Array.isArray(data) ? data : [data];
 
     messages.forEach(chat => {
-        const id = chat.anonymous_userid || chat.user_id;
-        const message = chat.message || chat.msg;
-        const timestamp = chat.timestamp || "Unknown time";
+        const id = escapeHTML(chat.anonymous_userid || chat.user_id || "Anon");
+        const message = escapeHTML(chat.message || chat.msg || "");
+        const timestamp = escapeHTML(chat.timestamp || "Now");
 
         const html = `<div class="chat-message">
                         <div class="chat-cont">

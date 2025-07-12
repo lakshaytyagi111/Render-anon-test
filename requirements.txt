@@ -6,3 +6,5 @@ google-cloud-firestore
 gunicorn
 firebase-admin
 flask-login
+google-generativeai
+python-dotenv

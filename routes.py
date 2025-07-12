@@ -10,7 +10,11 @@ from google.cloud.firestore_v1.base_query import FieldFilter
 import json
 from datetime import datetime
 import uuid
+from dotenv import load_dotenv
+import os
+import google.generativeai as genai
 
+load_dotenv()
 bp = Blueprint('main', __name__)
 
 # @bp.route("/firestore-test")
@@ -25,13 +29,26 @@ bp = Blueprint('main', __name__)
 #         return jsonify({"status": "error", "message": str(e)}), 500
     
 
-def moderate_message(message):
-    # Placeholder for Gemini API moderation call
-    # Replace with actual API integration
-    flagged_words = ['abuse', 'hate']
-    if any(word in message.lower() for word in flagged_words):
-        return False  # Message is flagged
-    return True
+# def moderate_message(message):
+#     # Placeholder for Gemini API moderation call
+#     # Replace with actual API integration
+#     flagged_words = ['abuse', 'hate']
+#     if any(word in message.lower() for word in flagged_words):
+#         return False  # Message is flagged
+#     return True
+
+genai.configure(api_key=os.getenv('GOOGLE-API-KEY'))
+
+def moderate_message(text):
+    model = genai.GenerativeModel('gemini-2.0-flash')
+    response = model.generate_content(f"Is this message harmful, abusive or violating community guidelines, do not flag code or js if any. ? Reply with yes or no. on the scale of 0 to 10 if score is above 5 then flag yes. Message: '{text}'")
+
+    flagged = 'yes' in response.text.lower()
+    return {
+        'flagged': flagged,
+        'reason': 'Gemini flagged it' if flagged else 'Looks clean'
+    }
+    
 
 @bp.route('/')
 def index():
@@ -209,8 +226,13 @@ def handle_message(data):
     room = data['room']
     join_room(room)
     msg = data['msg']
-    anonymous_userid = session.get('user', {}).get('anonymous_userid')
-    add_chat(room, anonymous_userid, msg)
-    # moderation
-    # print('now sending')
-    emit('message', {'msg': msg, 'anonymous_userid': anonymous_userid, 'timestamp': datetime.now().isoformat()}, to=room)
+    anonymous_userid = session.get('user', {}).get('anonymous_userid')   
+    moderation = moderate_message(msg)
+    if moderation['flagged']:
+        add_chat(room, anonymous_userid, moderation['reason'])
+        emit('message', {'msg': moderation['reason'], 'anonymous_userid': anonymous_userid, 'timestamp': datetime.now().isoformat()}, to=room)
+    else:
+        add_chat(room, anonymous_userid, msg)
+        emit('message', {'msg': msg, 'anonymous_userid': anonymous_userid, 'timestamp': datetime.now().isoformat()}, to=room)
+        
+        
